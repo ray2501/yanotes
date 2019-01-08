@@ -1,0 +1,21 @@
+<erl>
+
+-include("/opt/yaws/var/yaws/htdocs/pg_db.hrl").
+
+addRecord(Title, Body) ->
+    {ok, C} = epgsql:connect(?HOST, ?USER, ?PASS, #{
+        database => ?BASE,
+        timeout => 1000
+    }),
+    {ok, _} = epgsql:equery(C,
+        "insert into Notes (Title, Body, Created) values ($1, $2, now())", [Title, Body]),
+    ok = epgsql:close(C).
+
+out(Arg) ->
+    Result = yaws_api:parse_post(Arg),
+    {"title", Title} = lists:keyfind("title", 1, Result),
+    {"body", Body} = lists:keyfind("body", 1, Result),
+    ok = addRecord(Title, Body),
+    {redirect, "/index.yaws"}.
+
+</erl>

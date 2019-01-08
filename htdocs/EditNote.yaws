@@ -1,0 +1,48 @@
+<html>
+<head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>yanotes</title>
+        <link rel="stylesheet" href="css/pure-min.css">
+</head>
+<body>
+<erl>
+
+-include("/opt/yaws/var/yaws/htdocs/pg_db.hrl").
+
+getRecord(Id) ->
+    {ok, C} = epgsql:connect(?HOST, ?USER, ?PASS, #{
+        database => ?BASE,
+        timeout => 1000
+    }),
+    {ok, _, RS} = epgsql:equery(C, "select * from Notes where Id = $1", [Id]), 
+    ok = epgsql:close(C),
+    RS.
+
+out(Arg) ->
+    Result = yaws_api:parse_post(Arg),
+    {"id", Id} = lists:keyfind("id", 1, Result),
+    Rec = getRecord(Id),
+    Rec1 = lists:nth(1, Rec),
+    Title = binary_to_list(erlang:element(2, Rec1)),
+    Body = binary_to_list(erlang:element(3, Rec1)),
+    {html, io_lib:format("<h1>Edit Note - ~s</h1>
+        <form  class=\"pure-form\" action=\"UpdateNote.yaws\" method=\"post\">
+            <input name=\"id\" value=\"~s\" type=\"hidden\" />
+            <div>
+                <label name=\"title\">Title</label>
+                <div>
+                    <input name=\"title\" value=\"~s\" />
+                </div>
+                <label name=\"body\">Body</label>
+                <div><textarea rows=\"5\" cols=\"70\" name=\"body\">~s</textarea></div>
+            </div>
+            <br>
+            <div>
+                <button type=\"submit\">Save</button>
+            </div>
+        </form>", [Id, Id, Title, Body])}.
+
+</erl>    
+</body>
+</html>

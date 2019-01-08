@@ -1,0 +1,71 @@
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>yanotes</title>
+	<link rel="stylesheet" href="css/pure-min.css">
+</head>
+<body bgcolor="#ffffff">
+<h1 align="center">yanotes</h1>
+<br>
+<div class="pure-g">
+    <div class="pure-u-1-5"></div>
+    <div class="pure-u-1-5"></div>
+        <div class="pure-u-1-5"></div>
+    <div class="pure-u-1-5">
+    <button class="pure-button pure-button-primary" onclick="javascript:location.href='NewNote.html'">New</button>
+    </div>
+    <div class="pure-u-1-5"></div>
+</div>
+<hr>
+<table class="pure-table pure-table-bordered" width="99%">
+<thead>
+	<tr>
+		<th width="22%">Id</th>
+		<th width="20%">Title</th>
+		<th width="31%">Body</th>
+		<th width="17%">Created</th>
+		<th width="5%">Update</th>
+		<th width="5%">Remove</th>
+	</tr>
+</thead>
+<tbody>
+<erl>
+
+%% pg_db.hrl file is under docroot folder
+-include("/opt/yaws/var/yaws/htdocs/pg_db.hrl").
+
+getData() ->
+    {ok, C} = epgsql:connect(?HOST, ?USER, ?PASS, #{
+        database => ?BASE,
+        timeout => 1000
+    }),
+    {ok, _, RS} = epgsql:squery(C, "select * from Notes"),
+    ok = epgsql:close(C),
+    RS.
+
+out(Arg) -> 
+	RS = getData(),
+	{html, lists:map(fun(X) -> 
+	{Id, Title, Body, Created} = X,
+	io_lib:format("<tr>
+			<td>~s</td>
+			<td>~s</td>
+			<td>~s</td>
+			<td>~s</td>
+			<td><form action=\"EditNote.yaws\" method=\"POST\">
+			<input type=\"hidden\" name=\"id\" value=\"~s\">
+			<input class=\"pure-button\" type=\"submit\" value=\"Update\">
+			</form></td>
+			<td><form action=\"DeleteNote.yaws\" method=\"POST\">
+			<input type=\"hidden\" name=\"id\" value=\"~s\">
+			<input class=\"pure-button\" type=\"submit\" value=\"Delete\">
+			</form></td>
+		</tr>", [binary_to_list(Id), binary_to_list(Title), 
+			binary_to_list(Body), binary_to_list(Created), 
+			binary_to_list(Id), binary_to_list(Id)]) end, RS)}.
+</erl>
+</tbody>
+</table>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<erl>
+
+-include("/opt/yaws/var/yaws/htdocs/pg_db.hrl").
+
+removeRecord(Id) ->
+    {ok, C} = epgsql:connect(?HOST, ?USER, ?PASS, #{
+        database => ?BASE,
+        timeout => 1000
+    }),    
+    {ok, _} = epgsql:equery(C, "delete from Notes where Id = $1", [Id]),
+    ok = epgsql:close(C).
+
+
+out(Arg) ->
+    Result = yaws_api:parse_post(Arg),
+    {"id", Id} = lists:keyfind("id", 1, Result),
+    ok = removeRecord(Id),
+    {redirect, "/index.yaws"}.
+
+</erl>
